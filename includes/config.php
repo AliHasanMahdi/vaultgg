@@ -1,4 +1,7 @@
 <?php
+
+define('BASE_URL', '/~u202202670/vaultgg');
+
 function getConnection()
 {
     $dbc = mysqli_connect('localhost', 'u202202670', 'asdASD123!', 'db202202670');
