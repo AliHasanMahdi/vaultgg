@@ -4,7 +4,7 @@ require_once 'includes/config.php';
 
 // If already logged in, go home
 if (isLoggedIn()) {
-    header('Location: /index.php');
+    header('Location: /~u202202670/vaultgg/index.php');
     exit;
 }
 
@@ -153,7 +153,7 @@ $activePage = 'auth';
       <!-- LOGIN FORM -->
       <div id="login-form" style="display:<?= $tab==='login'?'block':'none' ?>">
         <div class="error-msg" id="login-error-js" style="display:none;"></div>
-        <form method="post">
+        <form method="post" action="/~u202202670/vaultgg/login.php">
           <input type="hidden" name="action" value="login">
           <div class="form-group">
             <label class="form-label">Email Address</label>
@@ -176,7 +176,7 @@ $activePage = 'auth';
       <!-- REGISTER FORM -->
       <div id="register-form" style="display:<?= $tab==='register'?'block':'none' ?>">
         <div class="error-msg" id="register-error-js" style="display:none;"></div>
-        <form method="post">
+        <form method="post" action="/~u202202670/vaultgg/login.php?tab=register">
           <input type="hidden" name="action" value="register">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div class="form-group">
