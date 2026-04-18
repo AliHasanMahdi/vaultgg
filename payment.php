@@ -52,10 +52,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pay'])) {
     if (strlen($card_cvv) < 3)
         $errors[] = 'Invalid CVV.';
 
-    if (empty($errors)) {
-        $success = true;
-        $step    = 3;
-    }
+   if (empty($errors)) {
+    // Mark account as sold
+    $upd = mysqli_prepare($dbc,
+        "UPDATE dbProj_accounts SET status = 'sold' WHERE account_id = ?");
+    mysqli_stmt_bind_param($upd, 'i', $id);
+    mysqli_stmt_execute($upd);
+    mysqli_stmt_close($upd);
+
+    // Record purchase
+    $ins = mysqli_prepare($dbc,
+        "INSERT INTO dbProj_purchases (user_id, account_id, amount_paid)
+         VALUES (?, ?, ?)");
+    mysqli_stmt_bind_param($ins, 'iid',
+        $_SESSION['user_id'], $id, $a['price']);
+    mysqli_stmt_execute($ins);
+    mysqli_stmt_close($ins);
+
+    $success = true;
+    $step    = 3;
+}
 }
 
 $savings = round((1 - $a['price'] / $a['original_val']) * 100);

@@ -423,14 +423,30 @@ include 'includes/header.php';
   </a>
 <?php endif; ?>
 
-        <button onclick="alert('❤️ Added to wishlist!')"
-                style="width:100%;background:transparent;border:1px solid var(--border);
-                       color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:0.85rem;
-                       font-weight:600;letter-spacing:1px;padding:0.75rem;cursor:pointer;
-                       text-transform:uppercase;margin-bottom:1.5rem;
-                       clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
-          ♡ Add to Wishlist
-        </button>
+        <?php if (isLoggedIn()): ?>
+<form method="post" action="/~u202202670/vaultgg/wishlist.php">
+  <input type="hidden" name="account_id" value="<?= $id ?>">
+  <button type="submit"
+          style="width:100%;background:transparent;
+                 border:1px solid var(--border);color:var(--muted);
+                 font-family:'Rajdhani',sans-serif;font-size:0.85rem;
+                 font-weight:600;letter-spacing:1px;padding:0.75rem;
+                 cursor:pointer;text-transform:uppercase;margin-bottom:1.5rem;
+                 clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
+    ❤️ Add to Wishlist
+  </button>
+</form>
+<?php else: ?>
+<button onclick="window.location='/~u202202670/vaultgg/login.php'"
+        style="width:100%;background:transparent;
+               border:1px solid var(--border);color:var(--muted);
+               font-family:'Rajdhani',sans-serif;font-size:0.85rem;
+               font-weight:600;letter-spacing:1px;padding:0.75rem;
+               cursor:pointer;text-transform:uppercase;margin-bottom:1.5rem;
+               clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
+  ❤️ Add to Wishlist
+</button>
+<?php endif; ?>
 
         <!-- Guarantees -->
         <div style="border-top:1px solid var(--border);padding-top:1.25rem;">

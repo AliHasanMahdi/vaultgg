@@ -33,14 +33,15 @@ require_once 'session.php';
     <?php endif; ?>
 
     <?php if (isLoggedIn()): ?>
-      <span style="color:var(--text);font-size:0.85rem;font-weight:600;">
-        👤 <?= htmlspecialchars($_SESSION['username']) ?>
-      </span>
-      <a class="nav-btn" href="/~u202202670/vaultgg/logout.php">Logout</a>
-    <?php else: ?>
-      <a class="nav-link" href="/~u202202670/vaultgg/login.php">Login</a>
-      <a class="nav-btn" href="/~u202202670/vaultgg/login.php">Sell Account</a>
-    <?php endif; ?>
+  <span style="color:var(--text);font-size:0.85rem;font-weight:600;">
+    👤 <?= htmlspecialchars($_SESSION['username']) ?>
+  </span>
+  <a class="nav-link" href="/~u202202670/vaultgg/profile.php">My Profile</a>
+  <a class="nav-btn" href="/~u202202670/vaultgg/logout.php">Logout</a>
+<?php else: ?>
+  <a class="nav-link" href="/~u202202670/vaultgg/login.php">Login</a>
+  <a class="nav-btn" href="/~u202202670/vaultgg/login.php">Sell Account</a>
+<?php endif; ?>
   </div>
 </nav>
 
