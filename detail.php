@@ -401,24 +401,27 @@ include 'includes/header.php';
         </div>
 
         <?php if (isLoggedIn()): ?>
-          <button onclick="alert('⚡ Redirecting to checkout... (demo)')"
-                  style="width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));
-                         border:none;color:#fff;font-family:'Orbitron',sans-serif;
-                         font-size:0.8rem;font-weight:700;letter-spacing:2px;padding:1rem;
-                         cursor:pointer;text-transform:uppercase;margin-bottom:0.75rem;
-                         clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
-            ⚡ Buy Now – Instant Delivery
-          </button>
-        <?php else: ?>
-          <a href="/~u202202670/vaultgg/login.php"
-             style="display:block;width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));
-                    color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;
-                    font-weight:700;letter-spacing:2px;padding:1rem;text-align:center;
-                    text-decoration:none;text-transform:uppercase;margin-bottom:0.75rem;
-                    clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
-            🔐 Login to Purchase
-          </a>
-        <?php endif; ?>
+  <a href="/~u202202670/vaultgg/payment.php?id=<?= $id ?>"
+     style="display:block;width:100%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;
+            font-weight:700;letter-spacing:2px;padding:1rem;text-align:center;
+            text-decoration:none;text-transform:uppercase;margin-bottom:0.75rem;
+            clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+            box-shadow:0 0 30px rgba(124,58,237,0.4);">
+    ⚡ Buy Now – Instant Delivery
+  </a>
+<?php else: ?>
+  <a href="/~u202202670/vaultgg/login.php"
+     style="display:block;width:100%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;
+            font-weight:700;letter-spacing:2px;padding:1rem;text-align:center;
+            text-decoration:none;text-transform:uppercase;margin-bottom:0.75rem;
+            clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);">
+    🔐 Login to Purchase
+  </a>
+<?php endif; ?>
 
         <button onclick="alert('❤️ Added to wishlist!')"
                 style="width:100%;background:transparent;border:1px solid var(--border);
