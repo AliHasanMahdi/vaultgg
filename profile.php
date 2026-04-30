@@ -6,7 +6,7 @@ require_once 'includes/session.php';
 require_once 'includes/config.php';
 
 if (!isLoggedIn()) {
-    header('Location: /~u202202670/vaultgg/login.php');
+    header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
 
@@ -21,7 +21,7 @@ if (isset($_GET['remove_wish'])) {
     mysqli_stmt_bind_param($stmt, 'ii', $wid, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
-    header('Location: /~u202202670/vaultgg/profile.php');
+    header('Location: ' . BASE_URL . '/profile.php');
     exit;
 }
 
@@ -58,7 +58,7 @@ if (isset($_GET['refund'])) {
         mysqli_stmt_close($upd2);
     }
 
-    header('Location: /~u202202670/vaultgg/profile.php?refunded=1');
+    header('Location: ' . BASE_URL . '/profile.php?refunded=1');
     exit;
 }
 
@@ -223,7 +223,7 @@ include 'includes/header.php';
           No purchases yet
         </div>
         <a class="btn-primary"
-           href="/~u202202670/vaultgg/index.php">Browse Accounts</a>
+           href="<?= BASE_URL ?>/index.php">Browse Accounts</a>
       </div>
     <?php else: ?>
       <?php foreach ($purchases as $p):
@@ -278,7 +278,7 @@ include 'includes/header.php';
                          display:block;margin-bottom:0.75rem;">
               ✅ Active
             </span>
-            <a href="/~u202202670/vaultgg/profile.php?refund=<?= $p['purchase_id'] ?>"
+            <a href="<?= BASE_URL ?>/profile.php?refund=<?= $p['purchase_id'] ?>"
                style="display:block;background:rgba(245,158,11,0.15);
                       border:1px solid rgba(245,158,11,0.3);
                       color:var(--accent3);font-family:'Orbitron',sans-serif;
@@ -327,7 +327,7 @@ include 'includes/header.php';
           Your wishlist is empty
         </div>
         <a class="btn-primary"
-           href="/~u202202670/vaultgg/index.php">Browse Accounts</a>
+           href="<?= BASE_URL ?>/index.php">Browse Accounts</a>
       </div>
     <?php else: ?>
       <div class="accounts-grid">
@@ -338,7 +338,7 @@ include 'includes/header.php';
         ?>
         <div style="position:relative;">
           <a class="account-card"
-             href="/~u202202670/vaultgg/detail.php?id=<?= $w['account_id'] ?>"
+             href="<?= BASE_URL ?>/detail.php?id=<?= $w['account_id'] ?>"
              style="<?= !$avail ? 'opacity:0.5;pointer-events:none;' : '' ?>">
             <div class="card-banner card-banner-<?= htmlspecialchars($w['cat_slug']) ?>">
               <div class="card-game-label label-<?= htmlspecialchars($w['cat_slug']) ?>">
@@ -373,7 +373,7 @@ include 'includes/header.php';
             <div class="card-verified"></div>
           </a>
           <!-- REMOVE FROM WISHLIST -->
-          <a href="/~u202202670/vaultgg/profile.php?remove_wish=<?= $w['wishlist_id'] ?>"
+          <a href="<?= BASE_URL ?>/profile.php?remove_wish=<?= $w['wishlist_id'] ?>"
              style="position:absolute;top:0.5rem;right:0.5rem;z-index:10;
                     background:rgba(239,68,68,0.9);color:#fff;border:none;
                     font-size:0.7rem;padding:0.3rem 0.6rem;cursor:pointer;
@@ -408,4 +408,3 @@ function showTab(tab) {
 </script>
 
 <?php include 'includes/footer.php'; ?>
-

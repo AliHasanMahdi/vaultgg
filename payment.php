@@ -6,7 +6,7 @@ require_once 'includes/session.php';
 require_once 'includes/config.php';
 
 if (!isLoggedIn()) {
-    header('Location: /~u202202670/vaultgg/login.php');
+    header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
 
@@ -26,7 +26,7 @@ $a      = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 
 if (!$a) {
-    header('Location: /~u202202670/vaultgg/index.php');
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
 
@@ -376,10 +376,10 @@ include 'includes/header.php';
     </div>
 
     <div style="display:flex;gap:1rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;">
-      <a class="btn-primary" href="/~u202202670/vaultgg/index.php">
+      <a class="btn-primary" href="<?= BASE_URL ?>/index.php">
         Browse More Accounts
       </a>
-      <a class="btn-outline" href="/~u202202670/vaultgg/detail.php?id=<?= $id ?>">
+      <a class="btn-outline" href="<?= BASE_URL ?>/detail.php?id=<?= $id ?>">
         Back to Listing
       </a>
     </div>
@@ -472,7 +472,7 @@ include 'includes/header.php';
 
         <!-- FORM FIELDS -->
         <form method="post"
-              action="/~u202202670/vaultgg/payment.php?id=<?= $id ?>">
+              action="<?= BASE_URL ?>/payment.php?id=<?= $id ?>">
           <input type="hidden" name="pay" value="1">
 
           <div class="form-group">

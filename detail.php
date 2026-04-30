@@ -37,7 +37,7 @@ if (!$a) {
         <div style="font-family:Orbitron,sans-serif;font-size:1.5rem;margin-bottom:1rem;">
             Account Not Found
         </div>
-        <a class="btn-primary" href="/~u202202670/vaultgg/index.php">
+        <a class="btn-primary" href="' . BASE_URL . '/index.php">
             Back to Listings
         </a>
     </div>';
@@ -79,7 +79,7 @@ if (isLoggedIn()) {
 // ---- Handle comment POST ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
     if (!isLoggedIn()) {
-        header('Location: /~u202202670/vaultgg/login.php');
+        header('Location: ' . BASE_URL . '/login.php');
         exit;
     }
     $body = trim($_POST['body'] ?? '');
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
         mysqli_stmt_bind_param($ins, 'iis', $id, $_SESSION['user_id'], $body);
         mysqli_stmt_execute($ins);
         mysqli_stmt_close($ins);
-        header("Location: /~u202202670/vaultgg/detail.php?id=$id");
+        header("Location: " . BASE_URL . "/detail.php?id=$id");
         exit;
     }
 }
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
 // ---- Handle rating POST ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rate'])) {
     if (!isLoggedIn()) {
-        header('Location: /~u202202670/vaultgg/login.php');
+        header('Location: ' . BASE_URL . '/login.php');
         exit;
     }
     $score = (int)($_POST['score'] ?? 0);
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rate'])) {
             $id, $_SESSION['user_id'], $score, $score);
         mysqli_stmt_execute($ins);
         mysqli_stmt_close($ins);
-        header("Location: /~u202202670/vaultgg/detail.php?id=$id");
+        header("Location: " . BASE_URL . "/detail.php?id=$id");
         exit;
     }
 }
@@ -129,7 +129,7 @@ include 'includes/header.php';
 <div style="padding-top:64px;">
 <div style="max-width:1100px;margin:0 auto;padding:3rem 2rem;">
 
-  <a href="/~u202202670/vaultgg/index.php"
+  <a href="<?= BASE_URL ?>/index.php"
      style="display:inline-flex;align-items:center;gap:0.5rem;
             color:var(--muted);text-decoration:none;
             font-family:'Rajdhani',sans-serif;font-size:0.9rem;
@@ -310,7 +310,7 @@ include 'includes/header.php';
       </form>
       <?php else: ?>
         <p style="color:var(--muted);margin-bottom:2rem;">
-          <a href="/~u202202670/vaultgg/login.php"
+          <a href="<?= BASE_URL ?>/login.php"
              style="color:var(--accent);">Login</a> to rate this account.
         </p>
       <?php endif; ?>
@@ -337,7 +337,7 @@ include 'includes/header.php';
       </form>
       <?php else: ?>
         <p style="color:var(--muted);margin-bottom:1.5rem;">
-          <a href="/~u202202670/vaultgg/login.php"
+          <a href="<?= BASE_URL ?>/login.php"
              style="color:var(--accent);">Login</a> to leave a comment.
         </p>
       <?php endif; ?>
@@ -361,7 +361,7 @@ include 'includes/header.php';
             <?= nl2br(htmlspecialchars($c['body'])) ?>
           </div>
           <?php if (isAdmin()): ?>
-          <form method="post" action="/~u202202670/vaultgg/admin/remove_comment.php"
+          <form method="post" action="<?= BASE_URL ?>/admin/remove_comment.php"
                 style="margin-top:0.5rem;">
             <input type="hidden" name="comment_id"
                    value="<?= $c['comment_id'] ?>">
@@ -401,7 +401,7 @@ include 'includes/header.php';
         </div>
 
         <?php if (isLoggedIn()): ?>
-  <a href="/~u202202670/vaultgg/payment.php?id=<?= $id ?>"
+  <a href="<?= BASE_URL ?>/payment.php?id=<?= $id ?>"
      style="display:block;width:100%;
             background:linear-gradient(135deg,var(--accent2),var(--accent));
             color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;
@@ -412,7 +412,7 @@ include 'includes/header.php';
     ⚡ Buy Now – Instant Delivery
   </a>
 <?php else: ?>
-  <a href="/~u202202670/vaultgg/login.php"
+  <a href="<?= BASE_URL ?>/login.php"
      style="display:block;width:100%;
             background:linear-gradient(135deg,var(--accent2),var(--accent));
             color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;
@@ -424,7 +424,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
         <?php if (isLoggedIn()): ?>
-<form method="post" action="/~u202202670/vaultgg/wishlist.php">
+<form method="post" action="<?= BASE_URL ?>/wishlist.php">
   <input type="hidden" name="account_id" value="<?= $id ?>">
   <button type="submit"
           style="width:100%;background:transparent;
@@ -437,7 +437,7 @@ include 'includes/header.php';
   </button>
 </form>
 <?php else: ?>
-<button onclick="window.location='/~u202202670/vaultgg/login.php'"
+<button onclick="window.location='<?= BASE_URL ?>/login.php'"
         style="width:100%;background:transparent;
                border:1px solid var(--border);color:var(--muted);
                font-family:'Rajdhani',sans-serif;font-size:0.85rem;
