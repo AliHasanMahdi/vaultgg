@@ -4,7 +4,7 @@ require_once 'includes/config.php';
 
 // If already logged in, go home
 if (isLoggedIn()) {
-    header('Location: /~u202202670/vaultgg/index.php');
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
 
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_bind_param($upd, 'i', $user['user_id']);
                 mysqli_stmt_execute($upd);
 
-                header('Location: /~u202202670/vaultgg/index.php');
+                header('Location: ' . BASE_URL . '/index.php');
                 exit;
             } else {
                 $error = 'Invalid email or password.';
@@ -88,21 +88,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $ins  = mysqli_prepare($dbc,
                     "INSERT INTO dbProj_users 
-                     (username, email, password, first_name, last_name, role)
-                     VALUES (?, ?, ?, ?, ?, 'visitor')");
+                     (username, email, password, first_name, last_name, role, is_active)
+                     VALUES (?, ?, ?, ?, ?, 'visitor', 1)");
                 mysqli_stmt_bind_param($ins, 'sssss', 
                     $username, $email, $hash, $first, $last);
-                mysqli_stmt_execute($ins);
+                
+                if (mysqli_stmt_execute($ins)) {
+                    // Auto login
+                    $_SESSION['user_id']  = mysqli_insert_id($dbc);
+                    $_SESSION['username'] = $username;
+                    $_SESSION['email']    = $email;
+                    $_SESSION['role']     = 'visitor';
+                    $_SESSION['name']     = $first;
 
-                // Auto login
-                $_SESSION['user_id']  = mysqli_insert_id($dbc);
-                $_SESSION['username'] = $username;
-                $_SESSION['email']    = $email;
-                $_SESSION['role']     = 'visitor';
-                $_SESSION['name']     = $first;
-
-                header('Location: /vaultgg/index.php');
-                exit;
+                    header('Location: ' . BASE_URL . '/index.php');
+                    exit;
+                } else {
+                    $error = 'Registration failed: ' . mysqli_error($dbc);
+                }
             }
         }
     }
@@ -110,26 +113,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $pageTitle  = 'Login';
 $activePage = 'auth';
+include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login – VaultGG</title>
-  <link rel="stylesheet" href="/vaultgg/assets/css/style.css">
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-</head>
-<body>
-
-<?php include 'includes/header.php'; ?>
 
 <div class="auth-wrapper">
   <div class="auth-container">
 
     <!-- LOGO -->
     <div style="text-align:center;margin-bottom:2rem;">
-      <a class="logo" href="/vaultgg/index.php">VAULT<span class="logo-gg">GG</span></a>
+      <a class="logo" href="<?= BASE_URL ?>/index.php">VAULT<span class="logo-gg">GG</span></a>
       <div style="color:var(--muted);font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;margin-top:0.4rem;">
         Secure Game Account Marketplace
       </div>
@@ -153,7 +145,7 @@ $activePage = 'auth';
       <!-- LOGIN FORM -->
       <div id="login-form" style="display:<?= $tab==='login'?'block':'none' ?>">
         <div class="error-msg" id="login-error-js" style="display:none;"></div>
-        <form method="post" action="/~u202202670/vaultgg/login.php">
+        <form method="post" action="<?= BASE_URL ?>/login.php">
           <input type="hidden" name="action" value="login">
           <div class="form-group">
             <label class="form-label">Email Address</label>
@@ -176,7 +168,7 @@ $activePage = 'auth';
       <!-- REGISTER FORM -->
       <div id="register-form" style="display:<?= $tab==='register'?'block':'none' ?>">
         <div class="error-msg" id="register-error-js" style="display:none;"></div>
-        <form method="post" action="/~u202202670/vaultgg/login.php?tab=register">
+        <form method="post" action="<?= BASE_URL ?>/login.php?tab=register">
           <input type="hidden" name="action" value="register">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div class="form-group">
@@ -260,5 +252,3 @@ function validateRegister() {
 </script>
 
 <?php include 'includes/footer.php'; ?>
-</parameter>
-<parameter name="path">/home/claude/vaultgg/login.php</parameter>

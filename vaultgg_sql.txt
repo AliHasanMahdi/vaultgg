@@ -1,0 +1,344 @@
+============================================================
+VaultGG – SQL Scripts
+IT8415 Group Project
+============================================================
+
+
+============================================================
+SCRIPT 1 – CREATE TABLES
+Run this first in phpMyAdmin SQL tab
+============================================================
+
+CREATE TABLE dbProj_categories (
+    cat_id     INT AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(50)  NOT NULL,
+    slug       VARCHAR(50)  NOT NULL UNIQUE,
+    color      VARCHAR(20)  NOT NULL DEFAULT '#00f0ff',
+    emoji      VARCHAR(10)  NOT NULL DEFAULT '🎮',
+    sort_order INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE dbProj_users (
+    user_id    INT AUTO_INCREMENT PRIMARY KEY,
+    username   VARCHAR(50)  NOT NULL UNIQUE,
+    email      VARCHAR(100) NOT NULL UNIQUE,
+    password   VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50)  NOT NULL,
+    last_name  VARCHAR(50)  NOT NULL,
+    role       ENUM('visitor','creator','admin') NOT NULL DEFAULT 'visitor',
+    is_active  TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME     DEFAULT NULL
+);
+
+CREATE TABLE dbProj_accounts (
+    account_id   INT AUTO_INCREMENT PRIMARY KEY,
+    creator_id   INT            NOT NULL,
+    cat_id       INT            NOT NULL,
+    title        VARCHAR(150)   NOT NULL,
+    slug         VARCHAR(160)   NOT NULL UNIQUE,
+    short_desc   VARCHAR(300)   NOT NULL,
+    description  TEXT           NOT NULL,
+    price        DECIMAL(10,2)  NOT NULL,
+    original_val DECIMAL(10,2)  NOT NULL,
+    rank_label   VARCHAR(50)    NOT NULL DEFAULT 'Unranked',
+    level_val    INT            DEFAULT NULL,
+    skins_count  INT            DEFAULT NULL,
+    wins_count   INT            DEFAULT NULL,
+    perks        TEXT           DEFAULT NULL,
+    tags         VARCHAR(300)   DEFAULT NULL,
+    is_hot       TINYINT(1)     NOT NULL DEFAULT 0,
+    status       ENUM('draft','published','removed') NOT NULL DEFAULT 'draft',
+    view_count   INT            NOT NULL DEFAULT 0,
+    created_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    published_at DATETIME       DEFAULT NULL,
+    FOREIGN KEY (creator_id) REFERENCES dbProj_users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (cat_id)     REFERENCES dbProj_categories(cat_id) ON DELETE RESTRICT
+);
+
+ALTER TABLE dbProj_accounts
+ADD FULLTEXT INDEX ft_accounts (title, short_desc, description, tags);
+
+CREATE TABLE dbProj_comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT  NOT NULL,
+    user_id    INT  NOT NULL,
+    body       TEXT NOT NULL,
+    is_removed TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES dbProj_accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)    REFERENCES dbProj_users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE dbProj_ratings (
+    rating_id  INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT     NOT NULL,
+    user_id    INT     NOT NULL,
+    score      TINYINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user_account (account_id, user_id),
+    FOREIGN KEY (account_id) REFERENCES dbProj_accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)    REFERENCES dbProj_users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE dbProj_activity_log (
+    log_id      INT AUTO_INCREMENT PRIMARY KEY,
+    action      VARCHAR(50)  NOT NULL,
+    entity_type VARCHAR(30)  NOT NULL,
+    entity_id   INT          NOT NULL,
+    user_id     INT          DEFAULT NULL,
+    note        VARCHAR(300) DEFAULT NULL,
+    logged_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+============================================================
+SCRIPT 2 – SEED DATA
+Run this second in phpMyAdmin SQL tab
+============================================================
+
+INSERT INTO dbProj_categories (name, slug, color, emoji, sort_order) VALUES
+('Fortnite',  'fortnite',  '#00d4ff', '⚡', 1),
+('Valorant',  'valorant',  '#ff4655', '🎯', 2),
+('PUBG',      'pubg',      '#f59e0b', '🔫', 3),
+('FIFA / FC', 'fifa',      '#22c55e', '⚽', 4);
+
+INSERT INTO dbProj_users (username, email, password, first_name, last_name, role) VALUES
+('admin',       'admin@vaultgg.com',   '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'Admin',  'VaultGG', 'admin'),
+('gamerxpress', 'gamer@vaultgg.com',   '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'Gamer',  'Xpress',  'creator'),
+('protrader',   'pro@vaultgg.com',     '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'Pro',    'Trader',  'creator'),
+('viewer1',     'viewer1@vaultgg.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'John',   'Viewer',  'visitor'),
+('viewer2',     'viewer2@vaultgg.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'Jane',   'Watcher', 'visitor'),
+('viewer3',     'viewer3@vaultgg.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJa/s7KS6', 'Ali',    'Hassan',  'visitor');
+
+INSERT INTO dbProj_accounts
+(creator_id, cat_id, title, slug, short_desc, description, price, original_val,
+ rank_label, level_val, skins_count, wins_count, perks, tags, is_hot, status, published_at)
+VALUES
+(2,1,'OG Black Knight + Renegade Raider','og-black-knight',
+ 'One of the rarest Fortnite accounts with legendary OG skins.',
+ 'One of the rarest Fortnite accounts available. Includes the legendary Black Knight and Renegade Raider skins which are no longer obtainable.',
+ 340,700,'Champion',287,142,1820,
+ '["⚡ Black Knight Skin","🏆 Renegade Raider","💎 142 Total Skins","🎯 1820 Wins"]',
+ 'OG Skins,Champion,1800+ Wins',1,'published',NOW()),
+
+(2,1,'Chapter 1 Season 3 Full Bundle','chapter-1-s3',
+ 'Rare Chapter 1 Season 3 account with full seasonal battle pass.',
+ 'Rare Chapter 1 Season 3 account with the full seasonal battle pass completed. Includes Galaxy skin and Purple Skull Trooper.',
+ 220,450,'Arena Contender',210,98,1100,
+ '["🎭 Chapter 1 S3 BP","💜 Galaxy Skin","🎯 98 Skins","🏅 Contender League"]',
+ 'Chapter 1,OG,Rare',0,'published',NOW()),
+
+(2,2,'Radiant Rank – All 23 Agents','radiant-all-agents',
+ 'Top 0.1% Radiant ranked account with all agents unlocked.',
+ 'Top 0.1% Radiant ranked Valorant account with all 23 agents unlocked. Includes rare Elderflame Vandal bundle.',
+ 520,950,'Radiant',452,87,2340,
+ '["💀 All 23 Agents","🔥 Elderflame Vandal","👑 Radiant Rank","✨ Prime Collection"]',
+ 'Radiant,All Agents,Rare Skins',0,'published',NOW()),
+
+(3,2,'Immortal 3 – Phantom Collection','immortal-3-phantom',
+ 'High-ranked Immortal 3 account with full Phantom skin collection.',
+ 'High-ranked Immortal 3 Valorant account with the full Phantom collection. Includes Prime, Reaver, and Ion Phantom skins.',
+ 290,580,'Immortal 3',310,45,1560,
+ '["👻 Prime Phantom","🗡️ Reaver Phantom","⚡ Ion Phantom","🏆 Immortal 3"]',
+ 'Immortal 3,Phantom Skins',0,'published',NOW()),
+
+(3,3,'Conqueror + Rare Crate Items','conqueror-crate',
+ 'PUBG Conqueror account with consistent top 500 ranking.',
+ 'PUBG Conqueror account achieved in Season 28 with consistent top 500 ranking. Includes rare crate items from legacy seasons.',
+ 95,200,'Conqueror',198,54,890,
+ '["🏆 Conqueror Title","🎁 Legacy Crate Items","💰 54 Outfit Sets","📊 High KDA"]',
+ 'Conqueror,Legacy Items',0,'published',NOW()),
+
+(2,4,'FC 25 – 10M Coins + TOTY Squad','fc25-10m-toty',
+ 'Fully built FC 25 Ultimate Team with 10M coins and TOTY squad.',
+ 'Fully built FC 25 Ultimate Team with 10 million coins and a complete TOTY squad. Includes rare Icon cards.',
+ 180,380,'Elite Div 1',NULL,NULL,NULL,
+ '["💰 10M Coins","⚽ Full TOTY Squad","🥇 Multiple Icons","🏆 Elite Division 1"]',
+ '10M Coins,TOTY,Icons',1,'published',NOW()),
+
+(3,1,'Season 2 OG – Ghoul Trooper','season-2-ghoul-trooper',
+ 'Ultra rare Ghoul Trooper skin from Season 2.',
+ 'Ultra rare Season 2 account featuring the original pink Ghoul Trooper which has not returned to the item shop since 2018.',
+ 480,900,'Champion',312,167,2300,
+ '["👻 Ghoul Trooper","🎒 Matching Back Bling","🏆 Season 2 BP","⚡ 167 Skins"]',
+ 'OG,Season 2,Ultra Rare',1,'published',NOW()),
+
+(2,3,'Ace Master with Pan Skin','ace-master-pan',
+ 'Ace Master PUBG account with exclusive frying pan skin.',
+ 'Ace Master rank PUBG account with the highly sought-after frying pan skin and exclusive seasonal rewards.',
+ 70,150,'Ace Master',145,38,560,
+ '["🍳 Pan Skin","🥇 Ace Master","🎁 Seasonal Rewards","📊 Top 10% Placement"]',
+ 'Ace Master,Pan Skin,Rare',0,'published',NOW()),
+
+(3,4,'FC 25 – Division 2 + 5M Coins','fc25-div2-5m',
+ 'Strong FC 25 account in Division 2 with 5M coins.',
+ 'Solid FC 25 Ultimate Team account in Division 2 with 5 million coins banked.',
+ 120,250,'Division 2',NULL,NULL,NULL,
+ '["💰 5M Coins","⚽ TOTW Cards","🥈 Division 2","🏅 Icon Collection"]',
+ '5M Coins,Division 2,Icons',0,'published',NOW()),
+
+(2,2,'Diamond 2 – Reaver Bundle','diamond-2-reaver',
+ 'Solid Diamond 2 Valorant account with full Reaver collection.',
+ 'Diamond 2 Valorant account with the full Reaver weapon collection. Great for skipping the grind.',
+ 180,380,'Diamond 2',265,28,980,
+ '["💀 Full Reaver Bundle","💎 Diamond 2","🕵️ 15 Agents","🏅 Episode 7 Rewards"]',
+ 'Diamond,Reaver,Knife',0,'published',NOW());
+
+INSERT INTO dbProj_ratings (account_id, user_id, score) VALUES
+(1,4,5),(1,5,5),(1,6,4),
+(2,4,4),(2,5,5),
+(3,4,5),(3,5,5),(3,6,5),
+(4,4,5),(4,5,4),
+(5,4,4),(5,6,4),
+(6,4,5),(6,5,5),(6,6,5),
+(7,4,5),(7,5,5),
+(8,4,3),(8,5,4),
+(9,4,4),(9,6,4),
+(10,4,4),(10,5,5);
+
+INSERT INTO dbProj_comments (account_id, user_id, body) VALUES
+(1,4,'Amazing account! Black Knight is legendary.'),
+(1,5,'Transferred instantly. Highly recommend!'),
+(3,4,'Radiant account is 100% legit. Already climbing!'),
+(6,5,'TOTY squad is complete. The Icons are real!'),
+(7,4,'Ghoul Trooper in OG pink. I am speechless!');
+
+UPDATE dbProj_accounts SET view_count = 1247 WHERE account_id = 1;
+UPDATE dbProj_accounts SET view_count = 893  WHERE account_id = 3;
+UPDATE dbProj_accounts SET view_count = 742  WHERE account_id = 6;
+UPDATE dbProj_accounts SET view_count = 350  WHERE account_id = 2;
+UPDATE dbProj_accounts SET view_count = 280  WHERE account_id = 7;
+UPDATE dbProj_accounts SET view_count = 210  WHERE account_id = 4;
+UPDATE dbProj_accounts SET view_count = 190  WHERE account_id = 5;
+UPDATE dbProj_accounts SET view_count = 150  WHERE account_id = 8;
+UPDATE dbProj_accounts SET view_count = 120  WHERE account_id = 9;
+UPDATE dbProj_accounts SET view_count = 95   WHERE account_id = 10;
+
+
+============================================================
+SCRIPT 3 – STORED PROCEDURES
+Run each one separately in phpMyAdmin SQL tab
+============================================================
+
+-- PROCEDURE 1: Run this alone, click Go
+CREATE PROCEDURE sp_report_popular(
+    IN p_date_from DATE,
+    IN p_date_to   DATE,
+    IN p_limit     INT
+)
+BEGIN
+    SELECT a.account_id, a.title, a.price, a.view_count,
+           c.name AS category,
+           u.username AS creator,
+           COALESCE(AVG(r.score), 0) AS avg_rating,
+           COUNT(DISTINCT cm.comment_id) AS comment_count,
+           a.published_at
+    FROM dbProj_accounts a
+    JOIN dbProj_categories c ON a.cat_id = c.cat_id
+    JOIN dbProj_users u ON a.creator_id = u.user_id
+    LEFT JOIN dbProj_ratings r ON a.account_id = r.account_id
+    LEFT JOIN dbProj_comments cm ON a.account_id = cm.account_id
+                                 AND cm.is_removed = 0
+    WHERE a.status = 'published'
+      AND (p_date_from IS NULL OR DATE(a.published_at) >= p_date_from)
+      AND (p_date_to   IS NULL OR DATE(a.published_at) <= p_date_to)
+    GROUP BY a.account_id
+    ORDER BY a.view_count DESC, avg_rating DESC
+    LIMIT p_limit;
+END
+
+
+-- PROCEDURE 2: Run this alone, click Go
+CREATE PROCEDURE sp_report_by_creator(IN p_user_id INT)
+BEGIN
+    SELECT a.account_id, a.title, a.status, a.price,
+           a.view_count, a.created_at, a.published_at,
+           c.name AS category,
+           COALESCE(AVG(r.score), 0) AS avg_rating,
+           COUNT(DISTINCT cm.comment_id) AS comment_count
+    FROM dbProj_accounts a
+    JOIN dbProj_categories c ON a.cat_id = c.cat_id
+    LEFT JOIN dbProj_ratings r ON a.account_id = r.account_id
+    LEFT JOIN dbProj_comments cm ON a.account_id = cm.account_id
+                                 AND cm.is_removed = 0
+    WHERE a.creator_id = p_user_id
+    GROUP BY a.account_id
+    ORDER BY a.created_at DESC;
+END
+
+
+============================================================
+SCRIPT 4 – INDEXES
+Run all at once in phpMyAdmin SQL tab
+============================================================
+
+CREATE INDEX idx_accounts_status  ON dbProj_accounts(status);
+CREATE INDEX idx_accounts_cat     ON dbProj_accounts(cat_id);
+CREATE INDEX idx_accounts_creator ON dbProj_accounts(creator_id);
+CREATE INDEX idx_comments_account ON dbProj_comments(account_id);
+CREATE INDEX idx_ratings_account  ON dbProj_ratings(account_id);
+
+
+============================================================
+SCRIPT 5 – TRIGGERS
+Use phpMyAdmin Triggers Tab method (not SQL tab)
+Go to table → Triggers tab → Add Trigger
+============================================================
+
+-- TRIGGER 1
+-- Table: dbProj_accounts
+-- Name: trg_account_published
+-- Time: AFTER  Event: UPDATE
+-- Definition (paste in Definition box):
+
+IF OLD.status != 'published' AND NEW.status = 'published' THEN
+    INSERT INTO dbProj_activity_log
+        (action, entity_type, entity_id, user_id, note)
+    VALUES
+        ('PUBLISHED', 'account', NEW.account_id, NEW.creator_id,
+         CONCAT('Account published: ', NEW.title));
+END IF;
+
+
+-- TRIGGER 2
+-- Table: dbProj_accounts
+-- Name: trg_account_removed
+-- Time: AFTER  Event: UPDATE
+-- Definition (paste in Definition box):
+
+IF OLD.status != 'removed' AND NEW.status = 'removed' THEN
+    INSERT INTO dbProj_activity_log
+        (action, entity_type, entity_id, note)
+    VALUES
+        ('REMOVED', 'account', NEW.account_id,
+         CONCAT('Account removed: ', NEW.title));
+END IF;
+
+
+-- TRIGGER 3
+-- Table: dbProj_users
+-- Name: trg_user_registered
+-- Time: AFTER  Event: INSERT
+-- Definition (paste in Definition box):
+
+INSERT INTO dbProj_activity_log
+    (action, entity_type, entity_id, note)
+VALUES
+    ('REGISTERED', 'user', NEW.user_id,
+     CONCAT('New user registered: ', NEW.username));
+
+
+============================================================
+TEST ACCOUNTS
+All passwords = password
+============================================================
+
+admin@vaultgg.com      = Admin role
+gamer@vaultgg.com      = Creator role
+pro@vaultgg.com        = Creator role
+viewer1@vaultgg.com    = Visitor role
+viewer2@vaultgg.com    = Visitor role
+viewer3@vaultgg.com    = Visitor role
+

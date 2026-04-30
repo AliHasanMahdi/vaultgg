@@ -113,9 +113,9 @@ include 'includes/header.php';
     <div class="hero-ctas">
       <a class="btn-primary" href="#listings">Browse Accounts</a>
       <?php if (isLoggedIn()): ?>
-        <a class="btn-outline" href="/~u202202670/vaultgg/creator/index.php">My Panel</a>
+        <a class="btn-outline" href="<?= BASE_URL ?>/creator/index.php">My Panel</a>
       <?php else: ?>
-        <a class="btn-outline" href="/~u202202670/vaultgg/login.php">Sell My Account</a>
+        <a class="btn-outline" href="<?= BASE_URL ?>/login.php">Sell My Account</a>
       <?php endif; ?>
     </div>
   </div>
@@ -207,7 +207,7 @@ include 'includes/header.php';
         $tags   = array_filter(array_map('trim', explode(',', $a['tags'] ?? '')));
       ?>
       <a class="account-card"
-         href="/~u202202670/vaultgg/detail.php?id=<?= $a['account_id'] ?>">
+         href="<?= BASE_URL ?>/detail.php?id=<?= $a['account_id'] ?>">
         <div class="card-banner card-banner-<?= htmlspecialchars($a['cat_slug']) ?>">
           <div class="card-game-label label-<?= htmlspecialchars($a['cat_slug']) ?>">
             <?= strtoupper(htmlspecialchars($a['cat_slug'])) ?>
@@ -283,9 +283,7 @@ include 'includes/header.php';
 <script>
 function doSearch() {
   const q = document.getElementById('search-input').value.trim();
-  if (q) window.location.href = '/~u202202670/vaultgg/search.php?q='
-                                + encodeURIComponent(q);
-}
+  if (q) window.location.href = '<?= BASE_URL ?>/search.php?q=' + encodeURIComponent(q);
 document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearch();
 });

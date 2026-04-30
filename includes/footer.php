@@ -14,6 +14,6 @@
 </footer>
 
 <div class="toast" id="toast"></div>
-<script src="/~u202202670/vaultgg/js/app.js"></script>
+<!-- <script src="/~u202202670/vaultgg/js/app.js"></script> -->
 </body>
 </html>
