@@ -208,14 +208,22 @@ include 'includes/header.php';
       ?>
       <a class="account-card"
          href="<?= BASE_URL ?>/detail.php?id=<?= $a['account_id'] ?>">
-        <div class="card-banner card-banner-<?= htmlspecialchars($a['cat_slug']) ?>">
-          <div class="card-game-label label-<?= htmlspecialchars($a['cat_slug']) ?>">
+        <div class="card-banner card-banner-<?= htmlspecialchars($a['cat_slug']) ?>"
+             style="position:relative;overflow:hidden;">
+          <?php if (!empty($a['image_path'])): ?>
+            <img src="<?= BASE_URL ?>/<?= htmlspecialchars($a['image_path']) ?>"
+                 alt=""
+                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;">
+          <?php else: ?>
+            <div class="card-banner-emoji"><?= $emoji ?></div>
+          <?php endif; ?>
+          <div class="card-game-label label-<?= htmlspecialchars($a['cat_slug']) ?>"
+               style="position:relative;z-index:1;">
             <?= strtoupper(htmlspecialchars($a['cat_slug'])) ?>
           </div>
           <?php if ($a['is_hot']): ?>
-            <div class="hot-badge">🔥 HOT</div>
+            <div class="hot-badge" style="position:relative;z-index:1;">🔥 HOT</div>
           <?php endif; ?>
-          <div class="card-banner-emoji"><?= $emoji ?></div>
         </div>
         <div class="card-body">
           <div class="card-title"><?= htmlspecialchars($a['title']) ?></div>

@@ -44,6 +44,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($original_val <= 0) $errors[] = 'Original value must be greater than 0.';
 
     if (empty($errors)) {
+        // Handle multiple image uploads
+        $image_path  = null;
+        $gallery     = [];
+        $allowed     = ['jpg','jpeg','png','gif','webp'];
+        $uploadDir   = dirname(__DIR__) . '/uploads/listings/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        $files = $_FILES['listing_images'] ?? [];
+        if (!empty($files['name'][0])) {
+            foreach ($files['name'] as $i => $fname) {
+                if (empty($fname)) continue;
+                if ($files['error'][$i] === UPLOAD_ERR_INI_SIZE || $files['error'][$i] === UPLOAD_ERR_FORM_SIZE) {
+                    $errors[] = "\"$fname\" is too large — server limit is 2MB per file.";
+                    continue;
+                }
+                if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                    $errors[] = "Upload error for \"$fname\" (code {$files['error'][$i]}).";
+                    continue;
+                }
+                $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+                if (!in_array($ext, $allowed)) {
+                    $errors[] = "\"$fname\": must be jpg, jpeg, png, gif, or webp.";
+                    continue;
+                }
+                if ($files['size'][$i] > 2 * 1024 * 1024) {
+                    $errors[] = "\"$fname\": must be under 2 MB.";
+                    continue;
+                }
+                $filename = 'listing_' . uniqid() . '.' . $ext;
+                if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $filename)) {
+                    $gallery[] = 'uploads/listings/' . $filename;
+                } else {
+                    $errors[] = "Failed to save \"$fname\". Check server permissions.";
+                }
+            }
+        }
+        if (!empty($gallery)) {
+            $image_path = $gallery[0];
+        }
+    }
+
+    if (empty($errors)) {
         // Build perks JSON
         $perksArr  = array_values(array_filter(
             array_map('trim', explode("\n", $perks_raw))
@@ -55,14 +97,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
         $slug = trim($slug, '-') . '-' . substr(uniqid(), -5);
 
+        $image_path  = $image_path ?? null;
+        $galleryJson = !empty($gallery) ? json_encode($gallery) : null;
+
         $stmt = mysqli_prepare($dbc,
             "INSERT INTO dbProj_accounts
              (creator_id, cat_id, title, slug, short_desc, description,
               price, original_val, rank_label, level_val, skins_count,
-              wins_count, perks, tags, is_hot, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
+              wins_count, perks, tags, image_path, gallery, is_hot, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
 
-        mysqli_stmt_bind_param($stmt, 'iissssddsiiissi',
+        mysqli_stmt_bind_param($stmt, 'iissssddsiiissssi',
             $_SESSION['user_id'],
             $cat_id,
             $title,
@@ -77,6 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $wins_count,
             $perksJson,
             $tags,
+            $image_path,
+            $galleryJson,
             $is_hot
         );
 
@@ -113,7 +160,7 @@ include '../includes/header.php';
     </div>
   <?php endif; ?>
 
-  <form method="post" style="max-width:800px;">
+  <form method="post" enctype="multipart/form-data" style="max-width:800px;">
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
 
@@ -240,6 +287,20 @@ include '../includes/header.php';
                 rows="6"
                 placeholder="Detailed description of the account..."
                 required><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        Listing Images
+        <small style="color:var(--muted);text-transform:none;
+                      letter-spacing:0;">(jpg, png, webp — max 2 MB each — first image shown on card)</small>
+      </label>
+      <input class="form-input" name="listing_images[]" type="file"
+             accept="image/jpeg,image/png,image/gif,image/webp"
+             multiple style="padding:0.5rem;">
+      <small style="color:var(--muted);display:block;margin-top:0.4rem;">
+        💡 Best results with landscape images — <strong>1920×1080 recommended</strong>
+      </small>
     </div>
 
     <button type="submit" class="form-submit">

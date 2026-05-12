@@ -60,6 +60,14 @@ CREATE TABLE dbProj_accounts (
 ALTER TABLE dbProj_accounts
 ADD FULLTEXT INDEX ft_accounts (title, short_desc, description, tags);
 
+-- Add image support (run this if the table already exists)
+ALTER TABLE dbProj_accounts
+ADD COLUMN image_path VARCHAR(300) DEFAULT NULL AFTER tags;
+
+-- Add gallery support (run this after the image_path column exists)
+ALTER TABLE dbProj_accounts
+ADD COLUMN gallery TEXT DEFAULT NULL AFTER image_path;
+
 CREATE TABLE dbProj_comments (
     comment_id INT AUTO_INCREMENT PRIMARY KEY,
     account_id INT  NOT NULL,

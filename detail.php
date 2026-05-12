@@ -118,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rate'])) {
 
 $savings = round((1 - $a['price'] / $a['original_val']) * 100);
 $perks   = json_decode($a['perks'] ?? '[]', true) ?: [];
+$gallery = json_decode($a['gallery'] ?? '[]', true) ?: [];
 $emojis  = ['fortnite'=>'⚡','valorant'=>'🎯','pubg'=>'🔫','fifa'=>'⚽'];
 $emoji   = $emojis[$a['cat_slug']] ?? '🎮';
 
@@ -146,19 +147,41 @@ include 'includes/header.php';
     <div>
       <!-- Banner -->
       <div class="card-banner card-banner-<?= htmlspecialchars($a['cat_slug']) ?>"
-           style="height:280px;margin-bottom:1.5rem;position:relative;
+           style="height:280px;margin-bottom:1.5rem;position:relative;overflow:hidden;
                   clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));">
-        <div style="position:absolute;inset:0;display:flex;align-items:center;
-                    justify-content:center;font-size:7rem;opacity:0.18;">
-          <?= $emoji ?>
-        </div>
+        <?php if (!empty($a['image_path'])): ?>
+          <img id="main-banner-img"
+               src="<?= BASE_URL ?>/<?= htmlspecialchars($a['image_path']) ?>"
+               alt=""
+               style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;">
+        <?php else: ?>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;
+                      justify-content:center;font-size:7rem;opacity:0.18;">
+            <?= $emoji ?>
+          </div>
+        <?php endif; ?>
         <div class="label-<?= htmlspecialchars($a['cat_slug']) ?>"
-             style="position:absolute;top:1.25rem;left:1.25rem;
+             style="position:absolute;top:1.25rem;left:1.25rem;z-index:1;
                     font-family:'Orbitron',sans-serif;font-size:0.7rem;
                     font-weight:700;letter-spacing:2px;padding:0.4rem 1rem;text-transform:uppercase;">
           <?= strtoupper(htmlspecialchars($a['cat_slug'])) ?>
         </div>
       </div>
+
+      <!-- Gallery thumbnails -->
+      <?php if (count($gallery) > 1): ?>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;" id="gallery-thumbs">
+        <?php foreach ($gallery as $idx => $img): ?>
+        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($img) ?>"
+             onclick="document.getElementById('main-banner-img').src=this.src"
+             style="height:60px;width:90px;object-fit:cover;cursor:pointer;
+                    border:2px solid <?= $idx===0?'var(--accent)':'var(--border)' ?>;opacity:<?= $idx===0?'1':'0.6' ?>;
+                    transition:all 0.2s;"
+             onmouseover="this.style.opacity='1';this.style.borderColor='var(--accent)'"
+             onmouseout="this.style.opacity='<?= $idx===0?'1':'0.6' ?>';this.style.borderColor='<?= $idx===0?'var(--accent)':'var(--border)' ?>'">
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
 
       <!-- Title -->
       <div style="font-family:'Orbitron',sans-serif;font-size:1.8rem;

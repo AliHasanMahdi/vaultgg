@@ -66,35 +66,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($price <= 0)        $errors[] = 'Price must be greater than 0.';
     if ($original_val <= 0) $errors[] = 'Original value must be greater than 0.';
 
+    // Handle multiple image uploads (optional on edit)
+    $new_image_path = null;
+    $new_gallery    = [];
+    $allowed        = ['jpg','jpeg','png','gif','webp'];
+    $uploadDir      = dirname(__DIR__) . '/uploads/listings/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $files = $_FILES['listing_images'] ?? [];
+    if (!empty($files['name'][0])) {
+        foreach ($files['name'] as $i => $fname) {
+            if (empty($fname)) continue;
+            $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed)) {
+                $errors[] = "File $fname: must be jpg, jpeg, png, gif, or webp."; continue;
+            }
+            if ($files['size'][$i] > 5 * 1024 * 1024) {
+                $errors[] = "File $fname: must be under 5 MB."; continue;
+            }
+            $filename = 'listing_' . uniqid() . '.' . $ext;
+            if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $filename)) {
+                $new_gallery[] = 'uploads/listings/' . $filename;
+            } else {
+                $errors[] = "Failed to save $fname.";
+            }
+        }
+        if (!empty($new_gallery)) {
+            $new_image_path = $new_gallery[0];
+        }
+    }
+
     if (empty($errors)) {
         $perksArr  = array_values(array_filter(
             array_map('trim', explode("\n", $perks_raw))
         ));
         $perksJson = json_encode($perksArr);
 
-        $stmt = mysqli_prepare($dbc,
-            "UPDATE dbProj_accounts
-             SET cat_id = ?, title = ?, short_desc = ?, description = ?,
-                 price = ?, original_val = ?, rank_label = ?, level_val = ?,
-                 skins_count = ?, wins_count = ?, perks = ?, tags = ?, is_hot = ?
-             WHERE account_id = ?");
-
-        mysqli_stmt_bind_param($stmt, 'isssddsiiiisii',
-            $cat_id,
-            $title,
-            $short_desc,
-            $description,
-            $price,
-            $original_val,
-            $rank_label,
-            $level_val,
-            $skins_count,
-            $wins_count,
-            $perksJson,
-            $tags,
-            $is_hot,
-            $id
-        );
+        if ($new_image_path !== null) {
+            $newGalleryJson = json_encode($new_gallery);
+            $stmt = mysqli_prepare($dbc,
+                "UPDATE dbProj_accounts
+                 SET cat_id = ?, title = ?, short_desc = ?, description = ?,
+                     price = ?, original_val = ?, rank_label = ?, level_val = ?,
+                     skins_count = ?, wins_count = ?, perks = ?, tags = ?,
+                     image_path = ?, gallery = ?, is_hot = ?
+                 WHERE account_id = ?");
+            mysqli_stmt_bind_param($stmt, 'isssddsiiiisssii',
+                $cat_id, $title, $short_desc, $description,
+                $price, $original_val, $rank_label,
+                $level_val, $skins_count, $wins_count,
+                $perksJson, $tags, $new_image_path, $newGalleryJson, $is_hot, $id
+            );
+        } else {
+            $stmt = mysqli_prepare($dbc,
+                "UPDATE dbProj_accounts
+                 SET cat_id = ?, title = ?, short_desc = ?, description = ?,
+                     price = ?, original_val = ?, rank_label = ?, level_val = ?,
+                     skins_count = ?, wins_count = ?, perks = ?, tags = ?, is_hot = ?
+                 WHERE account_id = ?");
+            mysqli_stmt_bind_param($stmt, 'isssddsiiiisii',
+                $cat_id, $title, $short_desc, $description,
+                $price, $original_val, $rank_label,
+                $level_val, $skins_count, $wins_count,
+                $perksJson, $tags, $is_hot, $id
+            );
+        }
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -149,7 +185,7 @@ include '../includes/header.php';
     </div>
   <?php endif; ?>
 
-  <form method="post" style="max-width:800px;">
+  <form method="post" enctype="multipart/form-data" style="max-width:800px;">
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
 
@@ -271,6 +307,30 @@ include '../includes/header.php';
       <textarea class="form-textarea" name="description"
                 rows="6"
                 required><?= htmlspecialchars($account['description']) ?></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        Listing Image
+        <small style="color:var(--muted);text-transform:none;
+                      letter-spacing:0;">(jpg, png, webp — max 5 MB; leave blank to keep existing)</small>
+      </label>
+      <?php if (!empty($account['image_path'])): ?>
+        <div style="margin-bottom:0.75rem;">
+          <img src="<?= BASE_URL ?>/<?= htmlspecialchars($account['image_path']) ?>"
+               alt="Current image"
+               style="max-height:120px;border:1px solid var(--border);">
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">
+            Current image — upload a new one to replace it.
+          </div>
+        </div>
+      <?php endif; ?>
+      <input class="form-input" name="listing_images[]" type="file"
+             accept="image/jpeg,image/png,image/gif,image/webp"
+             multiple style="padding:0.5rem;">
+      <small style="color:var(--muted);display:block;margin-top:0.4rem;">
+        💡 Best results with landscape images — <strong>1920×1080 recommended</strong>
+      </small>
     </div>
 
     <button type="submit" class="form-submit">
