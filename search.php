@@ -192,7 +192,7 @@ include 'includes/header.php';
         $tags   = array_filter(array_map('trim', explode(',', $a['tags'] ?? '')));
       ?>
       <a class="account-card"
-         href="/~u202202670/vaultgg/detail.php?id=<?= $a['account_id'] ?>">
+         href="<?= BASE_URL ?>/detail.php?id=<?= $a['account_id'] ?>">
         <div class="card-banner card-banner-<?= htmlspecialchars($a['cat_slug']) ?>">
           <div class="card-game-label label-<?= htmlspecialchars($a['cat_slug']) ?>">
             <?= strtoupper(htmlspecialchars($a['cat_slug'])) ?>

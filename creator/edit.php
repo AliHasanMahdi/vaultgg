@@ -11,62 +11,77 @@ if (!isLoggedIn() || (!isCreator() && !isAdmin())) {
 }
 
 $dbc    = getConnection();
-$errors = [];
+$userId = $_SESSION['user_id'];
+$id     = (int)($_GET['id'] ?? 0);
+
+// ---- Load the account (must belong to this creator, unless admin) ----
+if (isAdmin()) {
+    $stmt = mysqli_prepare($dbc,
+        "SELECT * FROM dbProj_accounts WHERE account_id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $id);
+} else {
+    $stmt = mysqli_prepare($dbc,
+        "SELECT * FROM dbProj_accounts WHERE account_id = ? AND creator_id = ?");
+    mysqli_stmt_bind_param($stmt, 'ii', $id, $userId);
+}
+mysqli_stmt_execute($stmt);
+$result  = mysqli_stmt_get_result($stmt);
+$account = mysqli_fetch_assoc($result);
+mysqli_stmt_close($stmt);
+
+if (!$account) {
+    header('Location: ' . BASE_URL . '/creator/index.php');
+    exit;
+}
 
 // ---- Get categories ----
 $cats     = mysqli_query($dbc, "SELECT * FROM dbProj_categories ORDER BY sort_order");
 $catsData = mysqli_fetch_all($cats, MYSQLI_ASSOC);
 mysqli_free_result($cats);
 
+$errors = [];
+
 // ---- Handle POST ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $title       = trim($_POST['title']       ?? '');
-    $cat_id      = (int)($_POST['cat_id']     ?? 0);
-    $short_desc  = trim($_POST['short_desc']  ?? '');
-    $description = trim($_POST['description'] ?? '');
-    $price       = (float)($_POST['price']    ?? 0);
-    $original_val= (float)($_POST['original_val'] ?? 0);
-    $rank_label  = trim($_POST['rank_label']  ?? 'Unranked');
-    $level_val   = $_POST['level_val']   !== '' ? (int)$_POST['level_val']   : null;
-    $skins_count = $_POST['skins_count'] !== '' ? (int)$_POST['skins_count'] : null;
-    $wins_count  = $_POST['wins_count']  !== '' ? (int)$_POST['wins_count']  : null;
-    $tags        = trim($_POST['tags']   ?? '');
-    $is_hot      = isset($_POST['is_hot']) ? 1 : 0;
-    $perks_raw   = trim($_POST['perks_raw'] ?? '');
+    $title        = trim($_POST['title']        ?? '');
+    $cat_id       = (int)($_POST['cat_id']      ?? 0);
+    $short_desc   = trim($_POST['short_desc']   ?? '');
+    $description  = trim($_POST['description']  ?? '');
+    $price        = (float)($_POST['price']     ?? 0);
+    $original_val = (float)($_POST['original_val'] ?? 0);
+    $rank_label   = trim($_POST['rank_label']   ?? 'Unranked');
+    $level_val    = $_POST['level_val']   !== '' ? (int)$_POST['level_val']   : null;
+    $skins_count  = $_POST['skins_count'] !== '' ? (int)$_POST['skins_count'] : null;
+    $wins_count   = $_POST['wins_count']  !== '' ? (int)$_POST['wins_count']  : null;
+    $tags         = trim($_POST['tags']   ?? '');
+    $is_hot       = isset($_POST['is_hot']) ? 1 : 0;
+    $perks_raw    = trim($_POST['perks_raw'] ?? '');
 
     // Validation
-    if (!$title)        $errors[] = 'Title is required.';
-    if (!$cat_id)       $errors[] = 'Please select a category.';
-    if (!$short_desc)   $errors[] = 'Short description is required.';
-    if (!$description)  $errors[] = 'Full description is required.';
-    if ($price <= 0)    $errors[] = 'Price must be greater than 0.';
+    if (!$title)            $errors[] = 'Title is required.';
+    if (!$cat_id)           $errors[] = 'Please select a category.';
+    if (!$short_desc)       $errors[] = 'Short description is required.';
+    if (!$description)      $errors[] = 'Full description is required.';
+    if ($price <= 0)        $errors[] = 'Price must be greater than 0.';
     if ($original_val <= 0) $errors[] = 'Original value must be greater than 0.';
 
     if (empty($errors)) {
-        // Build perks JSON
         $perksArr  = array_values(array_filter(
             array_map('trim', explode("\n", $perks_raw))
         ));
         $perksJson = json_encode($perksArr);
 
-        // Build slug
-        $slug = strtolower(trim($title));
-        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
-        $slug = trim($slug, '-') . '-' . substr(uniqid(), -5);
-
         $stmt = mysqli_prepare($dbc,
-            "INSERT INTO dbProj_accounts
-             (creator_id, cat_id, title, slug, short_desc, description,
-              price, original_val, rank_label, level_val, skins_count,
-              wins_count, perks, tags, is_hot, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
+            "UPDATE dbProj_accounts
+             SET cat_id = ?, title = ?, short_desc = ?, description = ?,
+                 price = ?, original_val = ?, rank_label = ?, level_val = ?,
+                 skins_count = ?, wins_count = ?, perks = ?, tags = ?, is_hot = ?
+             WHERE account_id = ?");
 
-        mysqli_stmt_bind_param($stmt, 'iissssddsiiissi',
-            $_SESSION['user_id'],
+        mysqli_stmt_bind_param($stmt, 'isssddsiiiisii',
             $cat_id,
             $title,
-            $slug,
             $short_desc,
             $description,
             $price,
@@ -77,20 +92,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $wins_count,
             $perksJson,
             $tags,
-            $is_hot
+            $is_hot,
+            $id
         );
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
-            header('Location: ' . BASE_URL . '/creator/index.php');
+            header('Location: ' . BASE_URL . '/creator/index.php?updated=1');
             exit;
         } else {
             $errors[] = 'Database error: ' . mysqli_error($dbc);
         }
     }
+
+    // On error, use POST values
+    $account = array_merge($account, [
+        'title'        => $title,
+        'cat_id'       => $cat_id,
+        'short_desc'   => $short_desc,
+        'description'  => $description,
+        'price'        => $price,
+        'original_val' => $original_val,
+        'rank_label'   => $rank_label,
+        'level_val'    => $level_val,
+        'skins_count'  => $skins_count,
+        'wins_count'   => $wins_count,
+        'tags'         => $tags,
+        'is_hot'       => $is_hot,
+    ]);
+    $perksForForm = $perks_raw;
+} else {
+    // Pre-fill perks textarea from stored JSON
+    $storedPerks  = json_decode($account['perks'] ?? '[]', true);
+    $perksForForm = implode("\n", $storedPerks ?: []);
 }
 
-$pageTitle  = 'Create Listing';
+$pageTitle  = 'Edit Listing';
 $activePage = 'creator';
 include '../includes/header.php';
 ?>
@@ -100,11 +137,10 @@ include '../includes/header.php';
 
   <div class="panel-header">
     <div>
-      <div class="panel-title">Create New Listing</div>
-      <div class="panel-subtitle">Fill in all details carefully</div>
+      <div class="panel-title">Edit Listing</div>
+      <div class="panel-subtitle">ID #<?= $account['account_id'] ?> — <?= htmlspecialchars($account['title']) ?></div>
     </div>
-    <a class="btn-outline"
-       href="<?= BASE_URL ?>/creator/index.php">← Back</a>
+    <a class="btn-outline" href="<?= BASE_URL ?>/creator/index.php">← Back</a>
   </div>
 
   <?php if ($errors): ?>
@@ -123,7 +159,7 @@ include '../includes/header.php';
           <label class="form-label">Title *</label>
           <input class="form-input" name="title" type="text"
                  placeholder="e.g. OG Black Knight Account"
-                 value="<?= htmlspecialchars($_POST['title'] ?? '') ?>"
+                 value="<?= htmlspecialchars($account['title']) ?>"
                  required>
         </div>
 
@@ -133,7 +169,7 @@ include '../includes/header.php';
             <option value="">-- Select Game --</option>
             <?php foreach ($catsData as $c): ?>
               <option value="<?= $c['cat_id'] ?>"
-                      <?= ($_POST['cat_id'] ?? 0) == $c['cat_id'] ? 'selected' : '' ?>>
+                      <?= $account['cat_id'] == $c['cat_id'] ? 'selected' : '' ?>>
                 <?= $c['emoji'] . ' ' . htmlspecialchars($c['name']) ?>
               </option>
             <?php endforeach; ?>
@@ -143,16 +179,16 @@ include '../includes/header.php';
         <div class="form-group">
           <label class="form-label">Price (USD) *</label>
           <input class="form-input" name="price" type="number"
-                 step="0.01" min="1" placeholder="e.g. 150.00"
-                 value="<?= htmlspecialchars($_POST['price'] ?? '') ?>"
+                 step="0.01" min="1"
+                 value="<?= htmlspecialchars($account['price']) ?>"
                  required>
         </div>
 
         <div class="form-group">
           <label class="form-label">Original / Estimated Value (USD) *</label>
           <input class="form-input" name="original_val" type="number"
-                 step="0.01" min="1" placeholder="e.g. 400.00"
-                 value="<?= htmlspecialchars($_POST['original_val'] ?? '') ?>"
+                 step="0.01" min="1"
+                 value="<?= htmlspecialchars($account['original_val']) ?>"
                  required>
         </div>
 
@@ -160,7 +196,7 @@ include '../includes/header.php';
           <label class="form-label">Rank</label>
           <input class="form-input" name="rank_label" type="text"
                  placeholder="e.g. Champion, Radiant, Diamond"
-                 value="<?= htmlspecialchars($_POST['rank_label'] ?? '') ?>">
+                 value="<?= htmlspecialchars($account['rank_label']) ?>">
         </div>
       </div>
 
@@ -171,13 +207,13 @@ include '../includes/header.php';
             <label class="form-label">Level</label>
             <input class="form-input" name="level_val" type="number"
                    min="1" placeholder="e.g. 200"
-                   value="<?= htmlspecialchars($_POST['level_val'] ?? '') ?>">
+                   value="<?= htmlspecialchars($account['level_val'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label class="form-label">Skins Count</label>
             <input class="form-input" name="skins_count" type="number"
                    min="0" placeholder="e.g. 50"
-                   value="<?= htmlspecialchars($_POST['skins_count'] ?? '') ?>">
+                   value="<?= htmlspecialchars($account['skins_count'] ?? '') ?>">
           </div>
         </div>
 
@@ -185,36 +221,34 @@ include '../includes/header.php';
           <label class="form-label">Total Wins</label>
           <input class="form-input" name="wins_count" type="number"
                  min="0" placeholder="e.g. 500"
-                 value="<?= htmlspecialchars($_POST['wins_count'] ?? '') ?>">
+                 value="<?= htmlspecialchars($account['wins_count'] ?? '') ?>">
         </div>
 
         <div class="form-group">
           <label class="form-label">
             Tags
-            <small style="color:var(--muted);text-transform:none;
-                          letter-spacing:0;">(comma separated)</small>
+            <small style="color:var(--muted);text-transform:none;letter-spacing:0;">(comma separated)</small>
           </label>
           <input class="form-input" name="tags" type="text"
                  placeholder="OG Skins, Champion, 1000+ Wins"
-                 value="<?= htmlspecialchars($_POST['tags'] ?? '') ?>">
+                 value="<?= htmlspecialchars($account['tags'] ?? '') ?>">
         </div>
 
         <div class="form-group">
           <label class="form-label">
             Perks / What's Included
-            <small style="color:var(--muted);text-transform:none;
-                          letter-spacing:0;">(one per line, start with emoji)</small>
+            <small style="color:var(--muted);text-transform:none;letter-spacing:0;">(one per line, start with emoji)</small>
           </label>
           <textarea class="form-textarea" name="perks_raw" rows="5"
                     placeholder="⚡ Black Knight Skin&#10;🏆 142 Skins&#10;🎯 1820 Wins"
-                    ><?= htmlspecialchars($_POST['perks_raw'] ?? '') ?></textarea>
+                    ><?= htmlspecialchars($perksForForm) ?></textarea>
         </div>
 
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
             <input type="checkbox" name="is_hot"
                    style="accent-color:var(--danger);width:16px;height:16px;"
-                   <?= isset($_POST['is_hot']) ? 'checked' : '' ?>>
+                   <?= $account['is_hot'] ? 'checked' : '' ?>>
             <span class="form-label" style="margin:0;">🔥 Mark as HOT listing</span>
           </label>
         </div>
@@ -225,29 +259,23 @@ include '../includes/header.php';
     <div class="form-group">
       <label class="form-label">
         Short Description *
-        <small style="color:var(--muted);text-transform:none;
-                      letter-spacing:0;">(max 300 chars, shown on card)</small>
+        <small style="color:var(--muted);text-transform:none;letter-spacing:0;">(max 300 chars, shown on card)</small>
       </label>
       <textarea class="form-textarea" name="short_desc"
                 rows="2" maxlength="300"
-                placeholder="A brief summary shown on the listing card..."
-                required><?= htmlspecialchars($_POST['short_desc'] ?? '') ?></textarea>
+                required><?= htmlspecialchars($account['short_desc']) ?></textarea>
     </div>
 
     <div class="form-group">
       <label class="form-label">Full Description *</label>
       <textarea class="form-textarea" name="description"
                 rows="6"
-                placeholder="Detailed description of the account..."
-                required><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                required><?= htmlspecialchars($account['description']) ?></textarea>
     </div>
 
     <button type="submit" class="form-submit">
-      💾 Save as Draft
+      💾 Save Changes
     </button>
-    <p style="color:var(--muted);font-size:0.8rem;margin-top:0.75rem;">
-      After saving you can publish the listing from your panel.
-    </p>
 
   </form>
 

@@ -48,7 +48,7 @@ CREATE TABLE dbProj_accounts (
     perks        TEXT           DEFAULT NULL,
     tags         VARCHAR(300)   DEFAULT NULL,
     is_hot       TINYINT(1)     NOT NULL DEFAULT 0,
-    status       ENUM('draft','published','removed') NOT NULL DEFAULT 'draft',
+    status       ENUM('draft','published','removed','sold') NOT NULL DEFAULT 'draft',
     view_count   INT            NOT NULL DEFAULT 0,
     created_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -90,6 +90,27 @@ CREATE TABLE dbProj_activity_log (
     user_id     INT          DEFAULT NULL,
     note        VARCHAR(300) DEFAULT NULL,
     logged_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE dbProj_wishlist (
+    wishlist_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT      NOT NULL,
+    account_id  INT      NOT NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user_account (user_id, account_id),
+    FOREIGN KEY (user_id)    REFERENCES dbProj_users(user_id)    ON DELETE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES dbProj_accounts(account_id) ON DELETE CASCADE
+);
+
+CREATE TABLE dbProj_purchases (
+    purchase_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT            NOT NULL,
+    account_id  INT            NOT NULL,
+    amount_paid DECIMAL(10,2)  NOT NULL,
+    status      ENUM('active','refunded','cancelled') NOT NULL DEFAULT 'active',
+    created_at  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id)    REFERENCES dbProj_users(user_id)    ON DELETE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES dbProj_accounts(account_id) ON DELETE CASCADE
 );
 
 

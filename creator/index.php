@@ -7,7 +7,7 @@ require_once '../includes/config.php';
 
 // Only creators and admins can access
 if (!isLoggedIn() || (!isCreator() && !isAdmin())) {
-    header('Location: /~u202202670/vaultgg/login.php');
+    header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
 
@@ -56,10 +56,24 @@ include '../includes/header.php';
       </div>
     </div>
     <a class="btn-primary"
-       href="/~u202202670/vaultgg/creator/create.php">
+       href="<?= BASE_URL ?>/creator/create.php">
       + Add New Listing
     </a>
   </div>
+
+  <?php if (isset($_GET['updated'])): ?>
+    <div class="error-msg" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:var(--success);margin-bottom:1.5rem;">
+      ✅ Listing updated successfully.
+    </div>
+  <?php elseif (isset($_GET['published'])): ?>
+    <div class="error-msg" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:var(--success);margin-bottom:1.5rem;">
+      🚀 Listing published successfully.
+    </div>
+  <?php elseif (isset($_GET['deleted'])): ?>
+    <div class="error-msg" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--danger);margin-bottom:1.5rem;">
+      🗑️ Listing removed successfully.
+    </div>
+  <?php endif; ?>
 
   <!-- STATS CARDS -->
   <div class="stats-cards">
@@ -108,7 +122,7 @@ include '../includes/header.php';
             <td colspan="10"
                 style="text-align:center;color:var(--muted);padding:3rem;">
               No listings yet.
-              <a href="/~u202202670/vaultgg/creator/create.php"
+              <a href="<?= BASE_URL ?>/creator/create.php"
                  style="color:var(--accent);">Create your first one!</a>
             </td>
           </tr>
@@ -117,7 +131,7 @@ include '../includes/header.php';
           <tr>
             <td style="color:var(--muted)"><?= $a['account_id'] ?></td>
             <td>
-              <a href="/~u202202670/vaultgg/detail.php?id=<?= $a['account_id'] ?>"
+              <a href="<?= BASE_URL ?>/detail.php?id=<?= $a['account_id'] ?>"
                  style="color:var(--accent);text-decoration:none;font-weight:600;">
                 <?= htmlspecialchars($a['title']) ?>
               </a>
@@ -144,7 +158,7 @@ include '../includes/header.php';
             </td>
             <td>
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <a href="/~u202202670/vaultgg/creator/edit.php?id=<?= $a['account_id'] ?>"
+                <a href="<?= BASE_URL ?>/creator/edit.php?id=<?= $a['account_id'] ?>"
                    style="background:var(--surface2);border:1px solid var(--border);
                           color:var(--muted);font-family:'Orbitron',sans-serif;
                           font-size:0.6rem;font-weight:700;letter-spacing:1px;
@@ -155,7 +169,7 @@ include '../includes/header.php';
                   Edit
                 </a>
                 <?php if ($a['status'] === 'draft'): ?>
-                <a href="/~u202202670/vaultgg/creator/publish.php?id=<?= $a['account_id'] ?>"
+                <a href="<?= BASE_URL ?>/creator/publish.php?id=<?= $a['account_id'] ?>"
                    style="background:rgba(16,185,129,0.15);
                           border:1px solid rgba(16,185,129,0.4);
                           color:var(--success);font-family:'Orbitron',sans-serif;
@@ -166,7 +180,7 @@ include '../includes/header.php';
                 </a>
                 <?php endif; ?>
                 <?php if ($a['status'] !== 'removed'): ?>
-                <a href="/~u202202670/vaultgg/creator/delete.php?id=<?= $a['account_id'] ?>"
+                <a href="<?= BASE_URL ?>/creator/delete.php?id=<?= $a['account_id'] ?>"
                    style="background:rgba(239,68,68,0.15);
                           border:1px solid rgba(239,68,68,0.4);
                           color:var(--danger);font-family:'Orbitron',sans-serif;

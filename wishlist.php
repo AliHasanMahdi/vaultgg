@@ -3,7 +3,7 @@ require_once 'includes/session.php';
 require_once 'includes/config.php';
 
 if (!isLoggedIn()) {
-    header('Location: /~u202202670/vaultgg/login.php');
+    header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
 
@@ -19,5 +19,5 @@ if ($accountId) {
     mysqli_stmt_close($stmt);
 }
 
-header('Location: /~u202202670/vaultgg/profile.php');
+header('Location: ' . BASE_URL . '/profile.php');
 exit;
