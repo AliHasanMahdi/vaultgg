@@ -12,6 +12,88 @@ if (!isLoggedIn()) {
 
 $dbc    = getConnection();
 $userId = $_SESSION['user_id'];
+$profileError = '';
+
+// ---- Handle profile photo upload ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_profile_photo'])) {
+    $photo = $_FILES['profile_photo'] ?? null;
+
+    if (!$photo || $photo['error'] !== UPLOAD_ERR_OK) {
+        $profileError = 'Please choose an image to upload.';
+    } elseif ($photo['size'] > 2 * 1024 * 1024) {
+        $profileError = 'Profile photo must be 2 MB or smaller.';
+    } else {
+        $imageInfo = @getimagesize($photo['tmp_name']);
+        $allowedTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp'
+        ];
+
+        if (!$imageInfo || !isset($allowedTypes[$imageInfo['mime']])) {
+            $profileError = 'Please upload a JPG, PNG, GIF, or WEBP image.';
+        } else {
+            $uploadDir = __DIR__ . '/uploads/images';
+
+            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+                $profileError = 'Could not create the profile photo folder.';
+            } else {
+                $fileName  = 'profile_' . $userId . '_' . time() . '.' . $allowedTypes[$imageInfo['mime']];
+                $imagePath = 'uploads/images/' . $fileName;
+
+                if (move_uploaded_file($photo['tmp_name'], $uploadDir . '/' . $fileName)) {
+                    $stmt = mysqli_prepare($dbc,
+                        "UPDATE dbProj_users SET profile_image = ? WHERE user_id = ?");
+                    mysqli_stmt_bind_param($stmt, 'si', $imagePath, $userId);
+                    mysqli_stmt_execute($stmt);
+                    mysqli_stmt_close($stmt);
+                    header('Location: ' . BASE_URL . '/profile.php?photo_updated=1');
+                    exit;
+                } else {
+                    $profileError = 'Could not save the uploaded profile photo.';
+                }
+            }
+        }
+    }
+}
+
+// ---- Handle creator request ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_creator'])) {
+    $stmt = mysqli_prepare($dbc,
+        "SELECT role FROM dbProj_users WHERE user_id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $currentRole);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    if ($currentRole === 'visitor') {
+        $stmt = mysqli_prepare($dbc,
+            "SELECT log_id FROM dbProj_activity_log
+             WHERE action = 'CREATOR_REQUEST' AND user_id = ?
+             LIMIT 1");
+        mysqli_stmt_bind_param($stmt, 'i', $userId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($stmt);
+        $hasRequest = mysqli_stmt_num_rows($stmt) > 0;
+        mysqli_stmt_close($stmt);
+
+        if (!$hasRequest) {
+            $note = 'Creator/seller status requested';
+            $stmt = mysqli_prepare($dbc,
+                "INSERT INTO dbProj_activity_log
+                 (action, entity_type, entity_id, user_id, note)
+                 VALUES ('CREATOR_REQUEST', 'user', ?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, 'iis', $userId, $userId, $note);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        header('Location: ' . BASE_URL . '/profile.php?creator_requested=1');
+        exit;
+    }
+}
 
 // ---- Handle wishlist remove ----
 if (isset($_GET['remove_wish'])) {
@@ -71,6 +153,20 @@ $result = mysqli_stmt_get_result($stmt);
 $user   = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 
+// ---- Check creator request status ----
+$hasCreatorRequest = false;
+if ($user['role'] === 'visitor') {
+    $stmt = mysqli_prepare($dbc,
+        "SELECT log_id FROM dbProj_activity_log
+         WHERE action = 'CREATOR_REQUEST' AND user_id = ?
+         LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_store_result($stmt);
+    $hasCreatorRequest = mysqli_stmt_num_rows($stmt) > 0;
+    mysqli_stmt_close($stmt);
+}
+
 // ---- Get purchases ----
 $stmt = mysqli_prepare($dbc,
     "SELECT p.*, a.title, a.price, a.rank_label,
@@ -122,12 +218,38 @@ include 'includes/header.php';
   </div>
   <?php endif; ?>
 
+  <?php if (isset($_GET['photo_updated'])): ?>
+  <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);
+              color:var(--success);padding:1rem 1.5rem;margin-bottom:2rem;
+              font-family:'Orbitron',sans-serif;font-size:0.8rem;letter-spacing:1px;">
+    Profile photo updated successfully.
+  </div>
+  <?php endif; ?>
+
+  <?php if (isset($_GET['creator_requested'])): ?>
+  <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);
+              color:var(--success);padding:1rem 1.5rem;margin-bottom:2rem;
+              font-family:'Orbitron',sans-serif;font-size:0.8rem;letter-spacing:1px;">
+    Creator/seller request submitted successfully.
+  </div>
+  <?php endif; ?>
+
+  <?php if ($profileError): ?>
+  <div class="error-msg"><?= htmlspecialchars($profileError) ?></div>
+  <?php endif; ?>
+
   <!-- PROFILE HEADER -->
   <div style="display:flex;align-items:center;gap:2rem;margin-bottom:3rem;
               background:var(--surface);border:1px solid var(--border);
               padding:2rem;flex-wrap:wrap;
               clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px));">
     <!-- AVATAR -->
+    <?php if (!empty($user['profile_image'])): ?>
+    <img src="<?= BASE_URL . '/' . htmlspecialchars($user['profile_image']) ?>"
+         alt="<?= htmlspecialchars($user['username']) ?> profile photo"
+         style="width:80px;height:80px;flex-shrink:0;object-fit:cover;
+                clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);">
+    <?php else: ?>
     <div style="width:80px;height:80px;flex-shrink:0;
                 background:linear-gradient(135deg,var(--accent2),var(--accent));
                 display:flex;align-items:center;justify-content:center;
@@ -136,6 +258,7 @@ include 'includes/header.php';
                 clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);">
       <?= strtoupper(substr($user['username'], 0, 2)) ?>
     </div>
+    <?php endif; ?>
     <div style="flex:1;">
       <div style="font-family:'Orbitron',sans-serif;font-size:1.5rem;
                   font-weight:900;margin-bottom:0.25rem;">
@@ -156,6 +279,45 @@ include 'includes/header.php';
         </span>
       </div>
     </div>
+  </div>
+
+  <!-- PROFILE SETTINGS -->
+  <div style="background:var(--surface);border:1px solid var(--border);
+              padding:1.5rem;margin-bottom:3rem;
+              clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));">
+    <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;
+               letter-spacing:1px;margin-bottom:1rem;">Profile Settings</h2>
+    <form method="post" enctype="multipart/form-data"
+          style="display:flex;align-items:end;gap:1rem;flex-wrap:wrap;">
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:220px;">
+        <label class="form-label">Profile Photo</label>
+        <input class="form-input" name="profile_photo" type="file"
+               accept=".jpg,.jpeg,.png,.gif,.webp" required>
+      </div>
+      <button type="submit" name="upload_profile_photo" value="1"
+              class="btn-primary">Upload Photo</button>
+    </form>
+
+    <?php if ($user['role'] === 'visitor'): ?>
+    <div style="border-top:1px solid var(--border);margin-top:1.5rem;padding-top:1.5rem;">
+      <div style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
+        Want to publish listings? Send a request to become a creator/seller.
+      </div>
+      <?php if ($hasCreatorRequest): ?>
+        <span style="background:rgba(16,185,129,0.15);color:var(--success);
+                     border:1px solid rgba(16,185,129,0.3);
+                     font-size:0.7rem;font-weight:700;letter-spacing:1px;
+                     padding:0.45rem 0.75rem;text-transform:uppercase;">
+          Request Submitted
+        </span>
+      <?php else: ?>
+      <form method="post">
+        <button type="submit" name="request_creator" value="1"
+                class="btn-outline">Become a Creator/Seller</button>
+      </form>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
   </div>
 
   <!-- STATS -->
