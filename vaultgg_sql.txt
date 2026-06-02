@@ -31,6 +31,10 @@ CREATE TABLE dbProj_users (
     last_login DATETIME     DEFAULT NULL
 );
 
+-- Add profile photo support (run this if the table already exists)
+ALTER TABLE dbProj_users
+ADD COLUMN profile_image VARCHAR(300) DEFAULT NULL AFTER last_name;
+
 CREATE TABLE dbProj_accounts (
     account_id   INT AUTO_INCREMENT PRIMARY KEY,
     creator_id   INT            NOT NULL,
