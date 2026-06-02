@@ -71,6 +71,7 @@ $totalAccounts  = mysqli_fetch_row(mysqli_query($dbc, "SELECT COUNT(*) FROM dbPr
 $totalPublished = mysqli_fetch_row(mysqli_query($dbc, "SELECT COUNT(*) FROM dbProj_accounts WHERE status='published'"))[0];
 $totalComments  = mysqli_fetch_row(mysqli_query($dbc, "SELECT COUNT(*) FROM dbProj_comments WHERE is_removed=0"))[0];
 $totalRatings   = mysqli_fetch_row(mysqli_query($dbc, "SELECT COUNT(*) FROM dbProj_ratings"))[0];
+$totalRefunds   = mysqli_fetch_row(mysqli_query($dbc, "SELECT COUNT(*) FROM dbProj_purchases WHERE status='refunded'"))[0];
 
 // Recent activity
 $recentActivity = mysqli_query($dbc,
@@ -132,6 +133,7 @@ include '../includes/header.php';
   <div style="display:flex;gap:1rem;margin-bottom:2.5rem;flex-wrap:wrap;">
     <a href="<?= BASE_URL ?>/admin/users.php"    class="btn-outline">👥 Manage Users</a>
     <a href="<?= BASE_URL ?>/admin/accounts.php" class="btn-outline">🎮 Manage Accounts</a>
+    <a href="<?= BASE_URL ?>/admin/refunds.php"  class="btn-outline">💸 Refunds (<?= $totalRefunds ?>)</a>
     <a href="<?= BASE_URL ?>/admin/comments.php" class="btn-outline">💬 Manage Comments</a>
     <a href="<?= BASE_URL ?>/admin/reports.php"  class="btn-primary" style="font-size:0.7rem;">📊 Reports</a>
     <a href="<?= BASE_URL ?>/index.php"          class="btn-outline">🏠 Back to Site</a>
